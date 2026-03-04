@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-vue-next';
-import AppLogo from '@/components/AppLogo.vue';
-import NavFooter from '@/components/NavFooter.vue';
+// Importamos ícones elegantes do Lucide para as tarefas e para o logótipo
+import { ListTodo, CheckCircle } from 'lucide-vue-next';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -14,27 +13,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: 'Tasks',
+        href: '/tasks',
+        icon: ListTodo,
     },
 ];
 </script>
@@ -45,8 +30,24 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
-                            <AppLogo />
+                        <Link href="/tasks">
+                            <div
+                                class="flex aspect-square size-8 items-center justify-center rounded-lg bg-black text-white dark:bg-white dark:text-black"
+                            >
+                                <CheckCircle class="size-5" />
+                            </div>
+                            <div
+                                class="grid flex-1 text-left text-sm leading-tight"
+                            >
+                                <span
+                                    class="truncate font-semibold text-gray-900 dark:text-[#EDEDEC]"
+                                    >To-Do App</span
+                                >
+                                <span
+                                    class="truncate text-xs text-gray-500 dark:text-[#A1A09A]"
+                                    >Stay organized</span
+                                >
+                            </div>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -58,9 +59,9 @@ const footerNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>
+
     <slot />
 </template>

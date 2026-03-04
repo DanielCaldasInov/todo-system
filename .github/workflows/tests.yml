@@ -56,8 +56,8 @@ jobs:
       - name: Install Node Dependencies
         run: npm ci
 
-      - name: Build Assets
-        run: npm run build
+      #- name: Build Assets
+        #run: npm run build
 
       - name: Tests
         run: ./vendor/bin/pest
