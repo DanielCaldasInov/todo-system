@@ -43,11 +43,21 @@ const form = useForm({
     due_date: '',
     priority: 'medium',
     status: 'pending',
+    subtasks: [] as { id?: number; title: string; is_completed: boolean }[],
 });
+
+const addSubtask = () => {
+    form.subtasks.push({ title: '', is_completed: false });
+};
+
+const removeSubtask = (index: number) => {
+    form.subtasks.splice(index, 1);
+};
 
 const openCreateModal = () => {
     isEditing.value = false;
     form.reset();
+    form.subtasks = [];
 
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -66,6 +76,11 @@ const openEditModal = (task: any) => {
     form.due_date = task.due_date ? task.due_date.split('T')[0] : '';
     form.priority = task.priority;
     form.status = task.status;
+
+    form.subtasks = task.subtasks
+        ? JSON.parse(JSON.stringify(task.subtasks))
+        : [];
+
     showFormModal.value = true;
 };
 
@@ -92,6 +107,18 @@ const toggleStatus = (task: any) => {
         {
             ...task,
             status: task.status === 'completed' ? 'pending' : 'completed',
+        },
+        { preserveScroll: true },
+    );
+};
+
+const toggleSubtaskStatus = (task: any, subtask: any) => {
+    subtask.is_completed = !subtask.is_completed;
+
+    router.put(
+        `/tasks/${task.id}`,
+        {
+            ...task,
         },
         { preserveScroll: true },
     );
@@ -167,7 +194,7 @@ const priorityLabels: Record<string, string> = {
                     >
                     <select
                         v-model="filterStatus"
-                        class="py-2 px-2 w-full rounded-lg border-gray-300 bg-white text-sm text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black dark:border-[#3E3E3A] dark:bg-[#161615] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                        class="w-full rounded-lg border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black dark:border-[#3E3E3A] dark:bg-[#161615] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
                     >
                         <option value="all">All Tasks</option>
                         <option value="pending">Pending</option>
@@ -181,7 +208,7 @@ const priorityLabels: Record<string, string> = {
                     >
                     <select
                         v-model="filterPriority"
-                        class="py-2 px-2 w-full rounded-lg border-gray-300 bg-white text-sm text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black dark:border-[#3E3E3A] dark:bg-[#161615] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                        class="w-full rounded-lg border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black dark:border-[#3E3E3A] dark:bg-[#161615] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
                     >
                         <option value="">Any Priority</option>
                         <option value="high">High</option>
@@ -197,7 +224,7 @@ const priorityLabels: Record<string, string> = {
                     <input
                         type="date"
                         v-model="filterDate"
-                        class="py-2 px-2 w-full rounded-lg border-gray-300 bg-white text-sm text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black dark:border-[#3E3E3A] dark:bg-[#161615] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                        class="w-full rounded-lg border-gray-300 bg-white px-2 py-2 text-sm text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black dark:border-[#3E3E3A] dark:bg-[#161615] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
                     />
                 </div>
             </div>
@@ -216,7 +243,7 @@ const priorityLabels: Record<string, string> = {
                     }"
                 >
                     <div
-                        class="flex-1 cursor-pointer p-5"
+                        class="flex flex-1 cursor-pointer flex-col p-5"
                         @click="openDetailsModal(task)"
                     >
                         <div class="mb-3 flex items-start justify-between">
@@ -276,33 +303,68 @@ const priorityLabels: Record<string, string> = {
                             {{ task.title }}
                         </h3>
 
-                        <p
-                            v-if="task.due_date"
-                            class="mt-auto flex items-center pt-4 text-sm text-gray-500 dark:text-[#A1A09A]"
+                        <div
+                            class="mt-auto flex items-center justify-between pt-4"
                         >
-                            <svg
-                                class="mr-1.5 h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                            <div
+                                v-if="task.subtasks?.length"
+                                class="flex items-center text-sm font-medium"
+                                :class="
+                                    task.subtasks.filter(
+                                        (s: any) => s.is_completed,
+                                    ).length === task.subtasks.length
+                                        ? 'text-green-600 dark:text-green-500'
+                                        : 'text-gray-500 dark:text-[#A1A09A]'
+                                "
                             >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                ></path>
-                            </svg>
-                            {{
-                                new Date(task.due_date).toLocaleDateString(
-                                    'en-US',
-                                )
-                            }}
-                        </p>
+                                <svg
+                                    class="mr-1.5 h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                    ></path>
+                                </svg>
+                                {{
+                                    task.subtasks.filter(
+                                        (s: any) => s.is_completed,
+                                    ).length
+                                }}/{{ task.subtasks.length }}
+                            </div>
+                            <div v-else></div>
+                            <p
+                                v-if="task.due_date"
+                                class="flex items-center text-sm text-gray-500 dark:text-[#A1A09A]"
+                            >
+                                <svg
+                                    class="mr-1.5 h-4 w-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    ></path>
+                                </svg>
+                                {{
+                                    new Date(task.due_date).toLocaleDateString(
+                                        'en-US',
+                                    )
+                                }}
+                            </p>
+                        </div>
                     </div>
 
                     <div
-                        class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-3 opacity-0 transition-opacity group-hover:opacity-100 dark:border-[#3E3E3A] dark:bg-[#0a0a0a]"
+                        class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-5 py-3 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 dark:border-[#3E3E3A] dark:bg-[#0a0a0a]"
                     >
                         <button
                             @click.stop="openEditModal(task)"
@@ -390,7 +452,7 @@ const priorityLabels: Record<string, string> = {
                                             v-model="form.title"
                                             type="text"
                                             required
-                                            class="px-2 py-2 mt-1 block w-full rounded-lg border-gray-300 bg-white text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                                            class="mt-1 block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
                                         />
                                         <span
                                             v-if="form.errors.title"
@@ -407,7 +469,7 @@ const priorityLabels: Record<string, string> = {
                                         <textarea
                                             v-model="form.description"
                                             rows="3"
-                                            class="px-2 py-2 mt-1 block w-full rounded-lg border-gray-300 bg-white text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                                            class="mt-1 block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
                                         ></textarea>
                                     </div>
 
@@ -420,7 +482,7 @@ const priorityLabels: Record<string, string> = {
                                             <input
                                                 v-model="form.due_date"
                                                 type="date"
-                                                class="px-2 py-2 mt-1 block w-full rounded-lg border-gray-300 bg-white text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                                                class="mt-1 block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
                                             />
                                         </div>
                                         <div>
@@ -430,7 +492,7 @@ const priorityLabels: Record<string, string> = {
                                             >
                                             <select
                                                 v-model="form.priority"
-                                                class="px-2 py-2 mt-1 block w-full rounded-lg border-gray-300 bg-white text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                                                class="mt-1 block w-full rounded-lg border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
                                             >
                                                 <option value="low">Low</option>
                                                 <option value="medium">
@@ -441,6 +503,71 @@ const priorityLabels: Record<string, string> = {
                                                 </option>
                                             </select>
                                         </div>
+                                    </div>
+
+                                    <div
+                                        class="border-t border-gray-100 pt-4 dark:border-[#3E3E3A]"
+                                    >
+                                        <label
+                                            class="mb-3 block text-sm font-medium text-gray-700 dark:text-[#A1A09A]"
+                                            >Checklist (Optional)</label
+                                        >
+
+                                        <div
+                                            v-for="(
+                                                subtask, index
+                                            ) in form.subtasks"
+                                            :key="index"
+                                            class="mb-3 flex gap-2"
+                                        >
+                                            <input
+                                                v-model="subtask.title"
+                                                type="text"
+                                                placeholder="Item title..."
+                                                required
+                                                class="block w-full flex-1 rounded-lg border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm transition-colors focus:border-black focus:ring-black sm:text-sm dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:text-[#EDEDEC] dark:focus:border-white dark:focus:ring-white"
+                                            />
+                                            <button
+                                                type="button"
+                                                @click="removeSubtask(index)"
+                                                class="rounded-lg border border-transparent bg-gray-50 p-2 text-red-500 transition-colors hover:border-red-200 hover:text-red-700 dark:bg-[#0a0a0a] dark:text-red-400 dark:hover:border-red-900 dark:hover:text-red-300"
+                                            >
+                                                <svg
+                                                    class="h-5 w-5"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M6 18L18 6M6 6l12 12"
+                                                    ></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            @click="addSubtask"
+                                            class="mt-1 inline-flex items-center text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-[#A1A09A] dark:hover:text-white"
+                                        >
+                                            <svg
+                                                class="mr-1.5 h-4 w-4"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M12 4v16m8-8H4"
+                                                ></path>
+                                            </svg>
+                                            Add Item
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -495,9 +622,7 @@ const priorityLabels: Record<string, string> = {
                                         priorityColors[selectedTask.priority],
                                     ]"
                                 >
-                                    {{
-                                        priorityLabels[selectedTask.priority]
-                                    }}
+                                    {{ priorityLabels[selectedTask.priority] }}
                                     Priority
                                 </span>
                                 <span
@@ -534,12 +659,55 @@ const priorityLabels: Record<string, string> = {
                         </h2>
 
                         <div
-                            class="prose prose-sm mb-8 whitespace-pre-wrap text-gray-600 dark:text-[#A1A09A]"
+                            class="prose prose-sm mb-6 whitespace-pre-wrap text-gray-600 dark:text-[#A1A09A]"
                         >
                             {{
                                 selectedTask.description ||
                                 'No description provided for this task.'
                             }}
+                        </div>
+
+                        <div
+                            v-if="
+                                selectedTask.subtasks &&
+                                selectedTask.subtasks.length > 0
+                            "
+                            class="mb-8"
+                        >
+                            <h4
+                                class="mb-3 text-xs font-bold tracking-wider text-gray-500 uppercase dark:text-[#A1A09A]"
+                            >
+                                Checklist
+                            </h4>
+                            <div class="space-y-2.5">
+                                <label
+                                    v-for="subtask in selectedTask.subtasks"
+                                    :key="subtask.id"
+                                    class="group flex cursor-pointer items-start gap-3"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        :checked="subtask.is_completed"
+                                        @change="
+                                            toggleSubtaskStatus(
+                                                selectedTask,
+                                                subtask,
+                                            )
+                                        "
+                                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-black transition-colors focus:ring-black dark:border-[#3E3E3A] dark:bg-[#0a0a0a] dark:checked:border-white dark:checked:bg-white dark:focus:ring-white"
+                                    />
+                                    <span
+                                        :class="[
+                                            'text-sm transition-colors',
+                                            subtask.is_completed
+                                                ? 'text-gray-400 line-through dark:text-gray-600'
+                                                : 'text-gray-800 group-hover:text-black dark:text-[#EDEDEC] dark:group-hover:text-white',
+                                        ]"
+                                    >
+                                        {{ subtask.title }}
+                                    </span>
+                                </label>
+                            </div>
                         </div>
 
                         <div
@@ -565,6 +733,29 @@ const priorityLabels: Record<string, string> = {
                                     selectedTask.due_date,
                                 ).toLocaleDateString('en-US')
                             }}
+                        </div>
+
+                        <div
+                            class="mt-8 flex justify-end gap-4 border-t border-gray-100 pt-5 dark:border-[#3E3E3A]"
+                        >
+                            <button
+                                @click="
+                                    showDetailsModal = false;
+                                    openEditModal(selectedTask);
+                                "
+                                class="text-sm font-medium text-gray-600 transition-colors hover:text-black dark:text-gray-400 dark:hover:text-white"
+                            >
+                                Edit Task
+                            </button>
+                            <button
+                                @click="
+                                    showDetailsModal = false;
+                                    deleteTask(selectedTask.id);
+                                "
+                                class="text-sm font-medium text-red-600 transition-colors hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                                Delete Task
+                            </button>
                         </div>
                     </div>
                 </div>

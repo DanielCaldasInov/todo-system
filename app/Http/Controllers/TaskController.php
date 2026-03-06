@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Subtask;
 use App\Models\Task;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +12,7 @@ class TaskController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Auth::user()->tasks();
+        $query = Auth::user()->tasks()->with('subtasks');
 
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
@@ -38,9 +39,15 @@ class TaskController extends Controller
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
             'priority' => 'required|in:low,medium,high',
+            'subtasks' => 'nullable|array',
+            'subtasks.*.title' => 'required|string|max:255',
         ]);
 
-        $request->user()->tasks()->create($validated);
+        $task = $request->user()->tasks()->create($request->only('title', 'description', 'due_date', 'priority'));
+
+        if (! empty($validated['subtasks'])) {
+            $task->subtasks()->createMany($validated['subtasks']);
+        }
 
         return redirect()->back();
     }
@@ -57,9 +64,33 @@ class TaskController extends Controller
             'due_date' => 'nullable|date',
             'priority' => 'required|in:low,medium,high',
             'status' => 'required|in:pending,completed',
+            'subtasks' => 'nullable|array',
+            'subtasks.*.id' => 'nullable|integer',
+            'subtasks.*.title' => 'required|string|max:255',
+            'subtasks.*.is_completed' => 'boolean',
         ]);
 
-        $task->update($validated);
+        $task->update($request->only('title', 'description', 'due_date', 'priority', 'status'));
+
+        $keptSubtaskIds = [];
+
+        if ($request->has('subtasks') && is_array($request->subtasks)) {
+            foreach ($request->subtasks as $subtaskData) {
+                if (isset($subtaskData['id'])) {
+                    /** @var Subtask $subtask */
+                    $subtask = $task->subtasks()->find($subtaskData['id']);
+                    if ($subtask) {
+                        $subtask->update($subtaskData);
+                        $keptSubtaskIds[] = $subtask->id;
+                    }
+                } else {
+                    $newSubtask = $task->subtasks()->create($subtaskData);
+                    $keptSubtaskIds[] = $newSubtask->id;
+                }
+            }
+        }
+
+        $task->subtasks()->whereNotIn('id', $keptSubtaskIds)->delete();
 
         return redirect()->back();
     }
