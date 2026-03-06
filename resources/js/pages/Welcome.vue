@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import { Sun, Moon } from 'lucide-vue-next';
+import { ref, onMounted } from 'vue';
 import { login, register } from '@/routes';
 
 withDefaults(
@@ -10,18 +12,56 @@ withDefaults(
         canRegister: true,
     },
 );
+
+const isDark = ref(false);
+
+onMounted(() => {
+    if (
+        localStorage.theme === 'dark' ||
+        (!('theme' in localStorage) &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches)
+    ) {
+        isDark.value = true;
+        document.documentElement.classList.add('dark');
+    } else {
+        isDark.value = false;
+        document.documentElement.classList.remove('dark');
+    }
+});
+
+const toggleTheme = () => {
+    isDark.value = !isDark.value;
+    if (isDark.value) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    }
+};
 </script>
 
 <template>
     <Head title="Welcome to Task Manager" />
 
     <div
-        class="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] lg:justify-center lg:p-8 dark:bg-[#0a0a0a]"
+        class="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-6 text-[#1b1b18] transition-colors duration-300 lg:justify-center lg:p-8 dark:bg-[#0a0a0a]"
     >
         <header
             class="mb-6 w-full max-w-83.75 text-sm not-has-[nav]:hidden lg:max-w-4xl"
         >
             <nav class="flex items-center justify-end gap-4">
+                <button
+                    @click="toggleTheme"
+                    class="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 dark:border-[#3E3E3A] dark:bg-[#161615] dark:text-[#A1A09A] dark:hover:bg-[#222] dark:hover:text-white"
+                    aria-label="Toggle Dark Mode"
+                >
+                    <Sun v-if="isDark" class="h-4 w-4" />
+                    <Moon v-else class="h-4 w-4" />
+                </button>
+
+                <div class="h-4 w-px bg-gray-300 dark:bg-[#3E3E3A]"></div>
+
                 <Link
                     v-if="$page.props.auth.user"
                     href="/tasks"
@@ -54,7 +94,7 @@ withDefaults(
                 class="flex w-full max-w-83.75 flex-col-reverse overflow-hidden rounded-lg border border-gray-100 shadow-[0px_4px_24px_rgba(0,0,0,0.04)] lg:max-w-4xl lg:flex-row dark:border-[#222]"
             >
                 <div
-                    class="flex-1 rounded-br-lg rounded-bl-lg bg-white p-8 pb-12 text-[13px] leading-5 lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC]"
+                    class="flex-1 rounded-br-lg rounded-bl-lg bg-white p-8 pb-12 text-[13px] leading-5 transition-colors duration-300 lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC]"
                 >
                     <h1
                         class="mb-3 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl dark:text-white"
@@ -140,7 +180,7 @@ withDefaults(
                 </div>
 
                 <div
-                    class="relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-t-lg border-l border-gray-100 bg-gray-50 p-12 lg:w-[438px] lg:rounded-t-none lg:rounded-r-lg dark:border-[#222] dark:bg-[#1a1a19]"
+                    class="relative flex w-full shrink-0 items-center justify-center overflow-hidden rounded-t-lg border-l border-gray-100 bg-gray-50 p-12 transition-colors duration-300 lg:w-109.5 lg:rounded-t-none lg:rounded-r-lg dark:border-[#222] dark:bg-[#1a1a19]"
                 >
                     <div
                         class="w-full max-w-60 rotate-2 transform rounded-xl border border-gray-100 bg-white p-6 shadow-lg transition-transform duration-300 hover:rotate-0 dark:border-[#333] dark:bg-[#222]"
