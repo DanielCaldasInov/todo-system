@@ -16,6 +16,8 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
 
+RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions bootstrap/cache
+
 RUN cp .env.example .env
 RUN sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
 RUN sed -i 's/^DB_DATABASE=.*/#DB_DATABASE=/' .env
