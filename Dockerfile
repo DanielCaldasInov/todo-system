@@ -17,8 +17,11 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 RUN cp .env.example .env
+RUN sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+RUN sed -i 's/^DB_DATABASE=.*/#DB_DATABASE=/' .env
 RUN php artisan key:generate
 RUN touch database/database.sqlite
+RUN php artisan migrate --force
 RUN chmod -R 777 storage bootstrap/cache database
 
 RUN npm ci
