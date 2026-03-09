@@ -16,10 +16,12 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader
 
-RUN npm ci
-RUN npm run build
-
+RUN cp .env.example .env
+RUN php artisan key:generate
 RUN touch database/database.sqlite
 RUN chmod -R 777 storage bootstrap/cache database
+
+RUN npm ci
+RUN npm run build
 
 CMD php artisan migrate:fresh --seed --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
